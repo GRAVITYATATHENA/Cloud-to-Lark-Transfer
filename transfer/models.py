@@ -15,6 +15,10 @@ class JobStore:
         self.db_path = db_path
         self._db: aiosqlite.Connection | None = None
 
+    async def _ensure_init(self):
+        if self._db is None:
+            await self.init()
+
     async def init(self):
         self._db = await aiosqlite.connect(self.db_path)
         self._db.row_factory = aiosqlite.Row
@@ -38,6 +42,7 @@ class JobStore:
             await self._db.close()
 
     async def create_job(self, order_number: str, source_url: str) -> str:
+        await self._ensure_init()
         import uuid
         job_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
@@ -49,6 +54,7 @@ class JobStore:
         return job_id
 
     async def get_job(self, job_id: str) -> dict | None:
+        await self._ensure_init()
         async with self._db.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)) as cur:
             row = await cur.fetchone()
             return dict(row) if row else None
