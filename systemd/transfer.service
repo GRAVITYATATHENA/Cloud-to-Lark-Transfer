@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloud to LARK Transfer Service
+After=network.target
+
+[Service]
+Type=simple
+User=transfer
+WorkingDirectory=/opt/transfer
+EnvironmentFile=/opt/transfer/.env
+ExecStart=/opt/transfer/.venv/bin/uvicorn transfer.app:app --host ${HOST} --port ${PORT}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
