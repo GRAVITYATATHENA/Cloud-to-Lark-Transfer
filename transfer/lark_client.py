@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 import httpx
 
-LARK_BASE = "https://open.feishu.cn/open-apis"
+LARK_BASE = "https://open.larksuite.com/open-apis"
 CHUNK_SIZE = 4 * 1024 * 1024  # 4 MB chunks for large file upload
 
 class LarkClient:

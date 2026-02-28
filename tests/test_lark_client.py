@@ -3,9 +3,9 @@ import respx
 import httpx
 from transfer.lark_client import LarkClient
 
-TOKEN_URL = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
-FOLDER_URL = "https://open.feishu.cn/open-apis/drive/v1/files/create_folder"
-LIST_URL = "https://open.feishu.cn/open-apis/drive/v1/files"
+TOKEN_URL = "https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal"
+FOLDER_URL = "https://open.larksuite.com/open-apis/drive/v1/files/create_folder"
+LIST_URL = "https://open.larksuite.com/open-apis/drive/v1/files"
 
 @pytest.fixture
 def client():
