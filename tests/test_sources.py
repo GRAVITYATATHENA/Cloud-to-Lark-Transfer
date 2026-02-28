@@ -89,3 +89,39 @@ async def test_download_single_file(dbox, tmp_path):
     paths = await dbox.download("https://www.dropbox.com/s/abc123/test.tif?dl=0", tmp_path)
     assert len(paths) == 1
     assert paths[0].read_bytes() == b"TIFFDATA"
+
+
+from transfer.sources.onedrive import OneDriveDownloader
+
+@pytest.fixture
+def onedrive():
+    return OneDriveDownloader(
+        client_id="test_client_id",
+        client_secret="test_secret",
+        tenant_id="common",
+    )
+
+def test_onedrive_encode_sharing_url(onedrive):
+    url = "https://1drv.ms/u/s!Abc123"
+    encoded = onedrive.encode_sharing_url(url)
+    assert encoded.startswith("u!")
+
+@respx.mock
+async def test_onedrive_download_file(onedrive, tmp_path):
+    respx.post("https://login.microsoftonline.com/common/oauth2/v2.0/token").mock(
+        return_value=httpx.Response(200, json={"access_token": "tok123", "token_type": "Bearer"})
+    )
+    sharing_url = "https://1drv.ms/u/s!TestFile"
+    encoded = onedrive.encode_sharing_url(sharing_url)
+    api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded}/driveItem"
+
+    respx.get(api_url).mock(return_value=httpx.Response(200, json={
+        "name": "test.tif",
+        "@microsoft.graph.downloadUrl": "https://download.example.com/test.tif"
+    }))
+    respx.get("https://download.example.com/test.tif").mock(
+        return_value=httpx.Response(200, content=b"TIFFBYTES")
+    )
+    paths = await onedrive.download(sharing_url, tmp_path)
+    assert len(paths) == 1
+    assert paths[0].read_bytes() == b"TIFFBYTES"
