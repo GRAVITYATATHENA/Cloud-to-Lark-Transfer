@@ -60,3 +60,32 @@ async def test_download_file_calls_gdown(gdrive, tmp_path):
         paths = await gdrive.download("https://drive.google.com/file/d/ABC/view", tmp_path)
         assert len(paths) == 1
         mock_dl.assert_called_once()
+
+
+import respx
+import httpx
+from transfer.sources.dropbox_ import DropboxDownloader
+
+@pytest.fixture
+def dbox():
+    return DropboxDownloader()
+
+def test_make_direct_url(dbox):
+    url = "https://www.dropbox.com/s/abc123/file.tif?dl=0"
+    assert dbox.make_direct_url(url) == "https://www.dropbox.com/s/abc123/file.tif?dl=1"
+
+def test_make_direct_url_already_dl1(dbox):
+    url = "https://www.dropbox.com/s/abc123/file.tif?dl=1"
+    assert dbox.make_direct_url(url) == "https://www.dropbox.com/s/abc123/file.tif?dl=1"
+
+def test_extract_filename(dbox):
+    url = "https://www.dropbox.com/s/abc123/myprint.tif?dl=0"
+    assert dbox.extract_filename(url) == "myprint.tif"
+
+@respx.mock
+async def test_download_single_file(dbox, tmp_path):
+    direct_url = "https://www.dropbox.com/s/abc123/test.tif?dl=1"
+    respx.get(direct_url).mock(return_value=httpx.Response(200, content=b"TIFFDATA"))
+    paths = await dbox.download("https://www.dropbox.com/s/abc123/test.tif?dl=0", tmp_path)
+    assert len(paths) == 1
+    assert paths[0].read_bytes() == b"TIFFDATA"
